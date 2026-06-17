@@ -5,22 +5,23 @@ import os
 from github_manager import GitHubManager
 from ai_fixer import AIFixer
 from dotenv import load_dotenv
+from typing import Optional
 
 load_dotenv()
 
 app = FastAPI(title="AI Auto-PR Bot Backend")
 
+# Restrict CORS middleware to only allow requests from specific origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],  # Replace with your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-from typing import Optional
-
 class FixRequest(BaseModel):
+    """Request model for the /api/fix-bug endpoint"""
     github_token: Optional[str] = None
     groq_api_key: Optional[str] = None
     repo_url: str
@@ -29,7 +30,8 @@ class FixRequest(BaseModel):
     issue_desc: Optional[str] = None
 
 @app.post("/api/fix-bug")
-async def fix_bug(req: FixRequest):
+async def fix_bug(req: FixRequest) -> dict:
+    """Create a pull request with a fixed bug in a GitHub repository"""
     try:
         # Fallback to environment variables if not provided
         gh_token = req.github_token
@@ -44,6 +46,12 @@ async def fix_bug(req: FixRequest):
             raise HTTPException(status_code=400, detail="GitHub Token is missing. Provide it in the request or set GITHUB_TOKEN environment variable.")
         if not groq_key:
             raise HTTPException(status_code=400, detail="Groq API Key is missing. Provide it in the request or set GROQ_API_KEY environment variable.")
+
+        # Validate repo_url and file_path
+        if not req.repo_url.startswith("https://github.com/"):
+            raise HTTPException(status_code=400, detail="Invalid repo_url. It should start with https://github.com/")
+        if req.file_path and not req.file_path.endswith((".py", ".java", ".js")):
+            raise HTTPException(status_code=400, detail="Invalid file_path. It should end with .py, .java, or .js")
 
         gh_manager = GitHubManager(gh_token)
         ai_fixer = AIFixer(groq_key)
@@ -94,6 +102,8 @@ async def fix_bug(req: FixRequest):
             "pr_url": pr_url
         }
 
+    except HTTPException as e:
+        raise e
     except Exception as e:
         import traceback
         traceback.print_exc()
