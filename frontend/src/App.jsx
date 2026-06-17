@@ -95,8 +95,15 @@ function App() {
       setTimeout(() => setCurrentStep(1), 1000)
       setTimeout(() => setCurrentStep(2), 2200)
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
-      const res = await fetch(`${backendUrl}/api/fix-bug`, {
+      let backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      if (backendUrl.endsWith('/')) {
+        backendUrl = backendUrl.slice(0, -1);
+      }
+      
+      const targetUrl = `${backendUrl}/api/fix-bug`;
+      console.log("Initiating request to:", targetUrl);
+
+      const res = await fetch(targetUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -109,9 +116,20 @@ function App() {
         })
       });
       
+      // Check if response is not JSON (e.g. 404 HTML page)
+      const contentType = res.headers.get("content-type");
+      if (!res.ok) {
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          throw new Error(data.detail || `Server returned error status ${res.status}`);
+        } else {
+          throw new Error(`Endpoint not found (404) or server error at ${targetUrl}. Status: ${res.status}`);
+        }
+      }
+      
       const data = await res.json();
       
-      if (res.ok && data.status === 'success') {
+      if (data.status === 'success') {
         setCurrentStep(6)
         setTimeout(() => {
           setCurrentStep(7)
