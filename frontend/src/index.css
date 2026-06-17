@@ -14,19 +14,24 @@
   --success-color: #30d158;
 }
 
-body {
+html, body, #root {
   margin: 0;
   padding: 0;
+  min-height: 100vh;
+  height: auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-primary);
-  overflow-x: hidden;
   background-image: 
     radial-gradient(circle at 50% -20%, rgba(123, 97, 255, 0.15), transparent 70%),
     radial-gradient(circle at 10% 80%, rgba(0, 198, 255, 0.04), transparent 50%),
     radial-gradient(circle at 90% 40%, rgba(255, 0, 128, 0.03), transparent 50%);
   background-attachment: fixed;
-  min-height: 100vh;
 }
 
 /* Scrollbar customization */
