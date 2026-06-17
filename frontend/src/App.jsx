@@ -10,7 +10,7 @@ function App() {
     return localStorage.getItem('cosmos_groq_key') || ''
   })
   
-  const [repo, setRepo] = useState('https://github.com/shashank-tomar0/auto-pr-bot')
+  const [repo, setRepo] = useState('')
   const [filePath, setFilePath] = useState('')
   const [branch, setBranch] = useState('main')
   const [issueDesc, setIssueDesc] = useState('')
