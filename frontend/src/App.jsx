@@ -78,7 +78,7 @@ function App() {
       setTimeout(() => setCurrentStep(1), 1000)
       setTimeout(() => setCurrentStep(2), 2200)
 
-      const res = await fetch('http://127.0.0.1:8000/api/fix-bug', {
+      const res = await fetch('http://127.0.0.1:8080/api/fix-bug', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
