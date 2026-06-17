@@ -5,6 +5,7 @@ import os
 from github_manager import GitHubManager
 from ai_fixer import AIFixer
 from dotenv import load_dotenv
+from typing import Optional
 
 load_dotenv()
 
@@ -18,9 +19,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from typing import Optional
-
 class FixRequest(BaseModel):
+    """
+    Request model for the /api/fix-bug endpoint.
+    
+    Attributes:
+    github_token (str): GitHub token for authentication.
+    groq_api_key (str): Groq API key for AI model access.
+    repo_url (str): URL of the GitHub repository.
+    file_path (str): Path to the file to be fixed.
+    branch (str): Branch of the repository.
+    issue_desc (str): Description of the issue to be fixed.
+    """
     github_token: Optional[str] = None
     groq_api_key: Optional[str] = None
     repo_url: str
@@ -30,21 +40,28 @@ class FixRequest(BaseModel):
 
 @app.post("/api/fix-bug")
 async def fix_bug(req: FixRequest):
+    """
+    Creates a GitHub pull request with a fixed version of a file.
+    
+    Args:
+    req (FixRequest): Request model containing the necessary information.
+    
+    Returns:
+    dict: Response model containing the status, file path, explanation, original code, fixed code, and PR URL.
+    """
     try:
         # Fallback to environment variables if not provided
-        gh_token = req.github_token
-        if not gh_token or gh_token.strip() == "":
-            gh_token = os.getenv("GITHUB_TOKEN")
-            
-        groq_key = req.groq_api_key
-        if not groq_key or groq_key.strip() == "":
-            groq_key = os.getenv("GROQ_API_KEY")
-            
+        gh_token = req.github_token or os.getenv("GITHUB_TOKEN")
+        groq_key = req.groq_api_key or os.getenv("GROQ_API_KEY")
+        
+        # Validate input data
         if not gh_token:
             raise HTTPException(status_code=400, detail="GitHub Token is missing. Provide it in the request or set GITHUB_TOKEN environment variable.")
         if not groq_key:
             raise HTTPException(status_code=400, detail="Groq API Key is missing. Provide it in the request or set GROQ_API_KEY environment variable.")
-
+        if not req.repo_url:
+            raise HTTPException(status_code=400, detail="Repository URL is missing.")
+        
         gh_manager = GitHubManager(gh_token)
         ai_fixer = AIFixer(groq_key)
 
@@ -52,15 +69,13 @@ async def fix_bug(req: FixRequest):
         repo = gh_manager.get_repo(req.repo_url)
         
         # Auto-discover file if not provided
-        target_file = req.file_path
-        if not target_file or target_file.strip() == "":
-            target_file = gh_manager.discover_main_file(repo, req.branch)
-            
+        target_file = req.file_path or gh_manager.discover_main_file(repo, req.branch)
+        
         # Get Original Code
         original_code, file_sha = gh_manager.get_file_content(repo, target_file, req.branch)
 
         # Process: Autonomous or Guided
-        if req.issue_desc and req.issue_desc.strip() != "":
+        if req.issue_desc:
             fixed_code = ai_fixer.fix_code(original_code, req.issue_desc)
             pr_details = ai_fixer.generate_pr_details(original_code, fixed_code, req.issue_desc)
             explanation = req.issue_desc
@@ -94,6 +109,8 @@ async def fix_bug(req: FixRequest):
             "pr_url": pr_url
         }
 
+    except HTTPException as e:
+        raise e
     except Exception as e:
         import traceback
         traceback.print_exc()
