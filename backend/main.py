@@ -5,22 +5,30 @@ import os
 from github_manager import GitHubManager
 from ai_fixer import AIFixer
 from dotenv import load_dotenv
+import logging
 
+# Load environment variables
 load_dotenv()
+
+# Initialize the logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Auto-PR Bot Backend")
 
+# Restrict CORS middleware to only allow specific origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["http://localhost:3000", "https://example.com"],
+    allow_credentials=False,
+    allow_methods=["POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 from typing import Optional
 
 class FixRequest(BaseModel):
+    """Request model for the /api/fix-bug endpoint"""
     github_token: Optional[str] = None
     groq_api_key: Optional[str] = None
     repo_url: str
@@ -29,7 +37,8 @@ class FixRequest(BaseModel):
     issue_desc: Optional[str] = None
 
 @app.post("/api/fix-bug")
-async def fix_bug(req: FixRequest):
+async def fix_bug(req: FixRequest) -> dict:
+    """Create a pull request with a fixed bug in a GitHub repository"""
     try:
         # Fallback to environment variables if not provided
         gh_token = req.github_token
@@ -94,7 +103,9 @@ async def fix_bug(req: FixRequest):
             "pr_url": pr_url
         }
 
+    except HTTPException as e:
+        logger.error(f"HTTP Exception: {e}")
+        raise e
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Unexpected Exception: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
