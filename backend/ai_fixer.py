@@ -3,7 +3,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 class AIFixer:
     def __init__(self, api_key: str):
-        self.llm = ChatGroq(api_key=api_key, model="llama3-70b-8192", temperature=0)
+        self.llm = ChatGroq(api_key=api_key, model="llama-3.3-70b-versatile", temperature=0)
 
     def fix_code(self, code: str, issue_description: str) -> str:
         sys_msg = SystemMessage(content=(
