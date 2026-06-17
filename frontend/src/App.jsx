@@ -263,13 +263,27 @@ function App() {
 
       {/* Error state */}
       {status === 'ERROR' && (
-        <div className="status-container" style={{ borderColor: 'rgba(255, 69, 58, 0.3)', background: 'rgba(255, 69, 58, 0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--error-color)' }}>
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Cosmos Failed</span>
+        <div className="status-container" style={{ borderColor: 'rgba(255, 69, 58, 0.25)', background: 'rgba(255, 69, 58, 0.03)', boxShadow: '0 10px 40px rgba(255, 69, 58, 0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 69, 58, 0.15)', paddingBottom: '12px', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0, fontFamily: 'Instrument Serif', fontSize: '2.2rem', fontWeight: '400', fontStyle: 'italic', color: 'var(--error-color)' }}>
+              Cosmos Interrupted
+            </h3>
+            <span className="card-badge before" style={{ background: 'rgba(255, 69, 58, 0.1)', color: 'var(--error-color)', borderColor: 'rgba(255, 69, 58, 0.2)' }}>
+              Error
+            </span>
           </div>
-          <p style={{ marginTop: '10px', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          <p style={{ margin: '0 0 20px 0', fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, textAlign: 'left' }}>
             {errorMsg}
           </p>
+          <div style={{ background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'left' }}>
+            <strong style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Troubleshooting Suggestions:</strong>
+            <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.6 }}>
+              <li>Verify that the repository URL is public and correctly spelled.</li>
+              <li>Ensure the repository is not empty and has a default branch.</li>
+              <li>To target a specific file, open the <strong>Configuration</strong> panel in the top right and set the <strong>Target File</strong> path manually.</li>
+              <li>Check your network connection and ensure the backend server is active.</li>
+            </ul>
+          </div>
         </div>
       )}
 

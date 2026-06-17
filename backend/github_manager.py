@@ -72,7 +72,16 @@ class GitHubManager:
         if js_ts_files:
             return js_ts_files[0]
             
-        raise Exception("No suitable Python or JavaScript/TypeScript file could be automatically discovered in the repository.")
+        # 4. Fallback to any non-hidden file in the root
+        any_files = [f.path for f in files if f.type == "file" and not f.path.startswith(".")]
+        if any_files:
+            # Prefer README or documentation files
+            for f in any_files:
+                if f.lower().startswith("readme") or f.lower().startswith("index"):
+                    return f
+            return any_files[0]
+            
+        raise Exception("No files could be automatically discovered in the repository's root directory. Ensure the repository has at least one file, or specify the file manually in the Configuration panel.")
 
     def get_file_content(self, repo, file_path: str, branch: str = "main"):
         try:
