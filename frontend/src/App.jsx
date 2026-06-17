@@ -95,7 +95,8 @@ function App() {
       setTimeout(() => setCurrentStep(1), 1000)
       setTimeout(() => setCurrentStep(2), 2200)
 
-      const res = await fetch('/api/fix-bug', {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/fix-bug`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

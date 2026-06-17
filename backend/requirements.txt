@@ -1,4 +1,6 @@
 PyGithub
 streamlit
-langchain-groq
+groq
 python-dotenv
+fastapi
+uvicorn

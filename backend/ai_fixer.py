@@ -1,25 +1,31 @@
-from langchain_groq import ChatGroq
-from langchain_core.messages import SystemMessage, HumanMessage
+from groq import Groq
 
 class AIFixer:
     def __init__(self, api_key: str):
-        self.llm = ChatGroq(api_key=api_key, model="llama-3.3-70b-versatile", temperature=0)
+        self.client = Groq(api_key=api_key)
+        self.model = "llama-3.3-70b-versatile"
 
     def fix_code(self, code: str, issue_description: str) -> str:
-        sys_msg = SystemMessage(content=(
+        sys_msg = (
             "You are an expert software engineer. Your task is to analyze the provided code "
             "and fix the issue described by the user. "
             "You must output ONLY the fixed code. Do not include markdown formatting like ```python, "
             "do not include explanations, just output the raw code that will replace the existing file."
-        ))
+        )
         
         prompt = f"Issue Description: {issue_description}\n\nCode:\n{code}"
-        human_msg = HumanMessage(content=prompt)
         
-        response = self.llm.invoke([sys_msg, human_msg])
+        response = self.client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": sys_msg},
+                {"role": "user", "content": prompt}
+            ],
+            model=self.model,
+            temperature=0
+        )
         
         # Clean up any potential markdown code blocks if the LLM ignores instructions
-        fixed_code = response.content.strip()
+        fixed_code = response.choices[0].message.content.strip()
         if fixed_code.startswith("```"):
             lines = fixed_code.split("\n")
             if len(lines) > 2:
@@ -28,17 +34,25 @@ class AIFixer:
         return fixed_code
     
     def generate_pr_details(self, original_code: str, fixed_code: str, issue_description: str) -> dict:
-        sys_msg = SystemMessage(content=(
+        sys_msg = (
             "You are an expert software engineer. Generate a Pull Request title and body based on the fix. "
             "Format your response exactly like this:\n"
             "TITLE: <your title>\n"
             "BODY:\n<your body>"
-        ))
+        )
         
         prompt = f"Issue: {issue_description}\n\nFix applied. Generate PR title and body."
-        response = self.llm.invoke([sys_msg, HumanMessage(content=prompt)])
         
-        content = response.content
+        response = self.client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": sys_msg},
+                {"role": "user", "content": prompt}
+            ],
+            model=self.model,
+            temperature=0
+        )
+        
+        content = response.choices[0].message.content
         title = "AI Auto-Fix"
         body = "This PR fixes the described issue."
         
@@ -53,7 +67,7 @@ class AIFixer:
         return {"title": title, "body": body}
 
     def analyze_and_fix(self, code: str) -> dict:
-        sys_msg = SystemMessage(content=(
+        sys_msg = (
             "You are an expert software engineer and code reviewer.\n"
             "Your task is to analyze the provided code, identify any bugs, vulnerabilities, code smells, "
             "inefficiencies, or style/documentation issues (like missing docstrings or type hints).\n"
@@ -69,13 +83,20 @@ class AIFixer:
             "```\n"
             "<Complete fixed code file here>\n"
             "```"
-        ))
+        )
         
         prompt = f"Analyze and improve this code:\n\n{code}"
-        human_msg = HumanMessage(content=prompt)
         
-        response = self.llm.invoke([sys_msg, human_msg])
-        content = response.content
+        response = self.client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": sys_msg},
+                {"role": "user", "content": prompt}
+            ],
+            model=self.model,
+            temperature=0
+        )
+        
+        content = response.choices[0].message.content
         
         explanation = "Identified and improved code quality."
         pr_title = "Refactor and optimize code structure"
@@ -128,4 +149,3 @@ class AIFixer:
             "pr_body": pr_body,
             "fixed_code": fixed_code
         }
-
