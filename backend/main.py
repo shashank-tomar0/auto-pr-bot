@@ -4,6 +4,9 @@ from pydantic import BaseModel
 import os
 from github_manager import GitHubManager
 from ai_fixer import AIFixer
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="AI Auto-PR Bot Backend")
 
@@ -16,8 +19,8 @@ app.add_middleware(
 )
 
 class FixRequest(BaseModel):
-    github_token: str
-    groq_api_key: str
+    github_token: Optional[str] = None
+    groq_api_key: Optional[str] = None
     repo_url: str
     file_path: str
     branch: str = "main"
@@ -26,8 +29,22 @@ class FixRequest(BaseModel):
 @app.post("/api/fix-bug")
 async def fix_bug(req: FixRequest):
     try:
-        gh_manager = GitHubManager(req.github_token)
-        ai_fixer = AIFixer(req.groq_api_key)
+        # Fallback to environment variables if not provided
+        gh_token = req.github_token
+        if not gh_token or gh_token.strip() == "":
+            gh_token = os.getenv("GITHUB_TOKEN")
+            
+        groq_key = req.groq_api_key
+        if not groq_key or groq_key.strip() == "":
+            groq_key = os.getenv("GROQ_API_KEY")
+            
+        if not gh_token:
+            raise HTTPException(status_code=400, detail="GitHub Token is missing. Provide it in the request or set GITHUB_TOKEN environment variable.")
+        if not groq_key:
+            raise HTTPException(status_code=400, detail="Groq API Key is missing. Provide it in the request or set GROQ_API_KEY environment variable.")
+
+        gh_manager = GitHubManager(gh_token)
+        ai_fixer = AIFixer(groq_key)
 
         # Fetch Repo & Original Code
         repo = gh_manager.get_repo(req.repo_url)
