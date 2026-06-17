@@ -34,13 +34,30 @@ function App() {
     "Deployment successful! Pull Request is ready."
   ]
 
+  // Proactively clear the old fine-grained token from localStorage to force fallback to the new classic token
+  useEffect(() => {
+    const cachedToken = localStorage.getItem('cosmos_github_token')
+    if (cachedToken && cachedToken.startsWith('github_pat_')) {
+      localStorage.removeItem('cosmos_github_token')
+      setToken('')
+    }
+  }, [])
+
   // Save keys to localStorage when changed
   useEffect(() => {
-    localStorage.setItem('cosmos_github_token', token)
+    if (token) {
+      localStorage.setItem('cosmos_github_token', token)
+    } else {
+      localStorage.removeItem('cosmos_github_token')
+    }
   }, [token])
 
   useEffect(() => {
-    localStorage.setItem('cosmos_groq_key', groqKey)
+    if (groqKey) {
+      localStorage.setItem('cosmos_groq_key', groqKey)
+    } else {
+      localStorage.removeItem('cosmos_groq_key')
+    }
   }, [groqKey])
 
   // Simple step advancement simulation during processing
